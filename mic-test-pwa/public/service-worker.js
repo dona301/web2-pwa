@@ -5,17 +5,27 @@ const APP_SHELL = [
   '/manifest.json',
   '/offline.html',
   '/icons/microphone192.png',
-  '/icons/micophone.png',
+  '/icons/microphone.png',
   '/screenshots/desktop.png',
   '/screenshots/mobile.png'
 ]
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME)
+      for (const url of APP_SHELL) {
+        try {
+          await cache.add(url)
+        } catch (err) {
+          console.warn('Failed to cache', url, err)
+        }
+      }
+    })()
   )
   self.skipWaiting()
 })
+
 
 self.addEventListener('activate', event => {
   event.waitUntil(
@@ -67,7 +77,7 @@ async function syncMicrophoneTests() {
   const tests = await db.getAll('tests')
 
   for (const test of tests.filter(t => !t.synced)) {
-    await fetch('http://localhost:5173/tests', {
+    await fetch('/tests', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
