@@ -1,9 +1,13 @@
-const { openDB } = idb
 const CACHE_NAME = 'mic-test-shell-v1'
 const APP_SHELL = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/offline.html',
+  '/icons/microphone192.png',
+  '/icons/micophone.png',
+  '/screenshots/desktop.png',
+  '/screenshots/mobile.png'
 ]
 
 self.addEventListener('install', event => {
@@ -27,19 +31,42 @@ self.addEventListener('activate', event => {
 })
 
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request)
-    })
-  )
+  const { request } = event
+  const url = new URL(request.url)
+
+  if (url.pathname.startsWith('/@vite') || url.pathname.startsWith('/src')) {
+    return
+  }
+event.respondWith(handleRequest(request))
 })
+
 
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-mic-tests') {
     event.waitUntil(syncMicrophoneTests())
   }
 })
+async function handleRequest(request) {
+  try {
+    // Try network first
+    return await fetch(request)
+  } catch (err) {
+    // ✅ Navigation → offline page
+    if (request.mode === 'navigate') {
+      const offline = await caches.match('/offline.html')
+      return offline
+    }
 
+    // ✅ Static asset → cache only
+    const cached = await caches.match(request)
+    if (cached) {
+      return cached
+    }
+
+    // ✅ Always return a Response
+    return Response.error()
+  }
+}
 async function syncMicrophoneTests() {
   const db = await openDB('mic-test-db', 1)
   const tests = await db.getAll('tests')
