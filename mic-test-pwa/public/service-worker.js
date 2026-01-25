@@ -1,5 +1,4 @@
-importScripts('https://cdn.jsdelivr.net/npm/idb@8/build/index.min.js');
-
+import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
 const CACHE_NAME = 'mic-test-shell-v1'
 const APP_SHELL = [
   '/',
