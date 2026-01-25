@@ -46,24 +46,19 @@ self.addEventListener('sync', event => {
     event.waitUntil(syncMicrophoneTests())
   }
 })
+
 async function handleRequest(request) {
   try {
-    // Try network first
     return await fetch(request)
   } catch (err) {
-    // ✅ Navigation → offline page
     if (request.mode === 'navigate') {
       const offline = await caches.match('/offline.html')
       return offline
     }
-
-    // ✅ Static asset → cache only
     const cached = await caches.match(request)
     if (cached) {
       return cached
     }
-
-    // ✅ Always return a Response
     return Response.error()
   }
 }
