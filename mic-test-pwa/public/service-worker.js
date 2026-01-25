@@ -96,9 +96,18 @@ async function syncMicrophoneTests() {
 
 
 self.addEventListener('push', event => {
-  const data = event.data?.json() || {}
+  let data = {}
+  try {
+    data = event.data.json()
+  } catch (err) {
+    data = {
+      title: 'Notification',
+      body: event.data?.text() || 'You have a new update'
+    }
+  }
 
-  self.registration.showNotification(data.title || 'Notification', {
-    body: data.body || 'You have a new update'
+  self.registration.showNotification(data.title, {
+    body: data.body
   })
 })
+
