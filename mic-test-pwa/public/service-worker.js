@@ -1,3 +1,5 @@
+importScripts('https://cdn.jsdelivr.net/npm/idb@8/build/index.min.js');
+
 const CACHE_NAME = 'mic-test-shell-v1'
 const APP_SHELL = [
   '/',
@@ -26,19 +28,18 @@ self.addEventListener('install', event => {
   self.skipWaiting()
 })
 
-
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      )
-    )
-  )
-  self.clients.claim()
-})
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys
+        .filter(key => key !== CACHE_NAME)
+        .map(key => caches.delete(key))
+      );
+    })()
+  );
+  self.clients.claim();
+});
 
 self.addEventListener('fetch', event => {
   const { request } = event
@@ -47,9 +48,8 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/@vite') || url.pathname.startsWith('/src')) {
     return
   }
-event.respondWith(handleRequest(request))
+  event.respondWith(handleRequest(request))
 })
-
 
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-mic-tests') {
@@ -59,19 +59,20 @@ self.addEventListener('sync', event => {
 
 async function handleRequest(request) {
   try {
-    return await fetch(request)
+    return await fetch(request);
   } catch (err) {
     if (request.mode === 'navigate') {
-      const offline = await caches.match('/offline.html')
-      return offline
+      const cachedIndex = await caches.match('/index.html');
+      return cachedIndex || (await caches.match('/offline.html'));
     }
-    const cached = await caches.match(request)
-    if (cached) {
-      return cached
-    }
-    return Response.error()
+
+    const cached = await caches.match(request);
+    if (cached) return cached;
+
+    return Response.error();
   }
 }
+
 async function syncMicrophoneTests() {
   const db = await openDB('mic-test-db', 1)
   const tests = await db.getAll('tests')
@@ -106,8 +107,10 @@ self.addEventListener('push', event => {
     }
   }
 
-  self.registration.showNotification(data.title, {
-    body: data.body
-  })
+  if (Notification.permission === 'granted') {
+    self.registration.showNotification(data.title, {
+      body: data.body
+    });
+  }
 })
 
