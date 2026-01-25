@@ -22,10 +22,13 @@
 import { ref, onMounted } from 'vue'
 import MicrophoneTest from '../components/MicrophoneTest.vue'
 import { getAllTests } from '../services/db'
+import { requestPushPermission } from './pwa/push.js'
+import './pwa/registerSW.js'
 
 const tests = ref([])
 
 onMounted(async () => {
+  requestPushPermission()
   tests.value = await getAllTests()
 })
 
