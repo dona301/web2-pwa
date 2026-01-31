@@ -21,6 +21,8 @@ import {
   supportsAudioContext
 } from '../utils/featureDetection'
 
+const emit = defineEmits(['test-added'])
+
 const isTesting = ref(false)
 const volume = ref(0)
 const error = ref(null)
@@ -43,6 +45,7 @@ async function toggleTest() {
     })
 
     await registerSync()
+    emit('test-added')
     return
   }
 

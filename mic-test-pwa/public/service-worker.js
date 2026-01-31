@@ -77,17 +77,29 @@ async function syncMicrophoneTests() {
   const tests = await db.getAll('tests')
 
   for (const test of tests.filter(t => !t.synced)) {
-    await fetch('/tests', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(test)
-    })
+    try {
+      const response = await fetch('/tests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(test)
+      })
 
-    test.synced = true
-    await db.put('tests', test)
+      if (response.ok) {
+        test.synced = true
+        await db.put('tests', test)
+      } else {
+        console.error('Failed to sync test:', test.id, response.status)
+      }
+    } catch (error) {
+      console.error('Error syncing test:', test.id, error)
+    }
   }
+
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => client.postMessage({ type: 'sync-complete' }))
+  })
 
   self.registration.showNotification('Sync complete', {
     body: 'Microphone tests uploaded successfully'

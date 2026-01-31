@@ -2,7 +2,7 @@
   <main>
     <h1>Test Your Microphone</h1>
 
-    <MicrophoneTest />
+    <MicrophoneTest @test-added="loadTests" />
 
     <section v-if="tests.length">
       <h2>Previous tests</h2>
@@ -27,9 +27,23 @@ import '../pwa/registerSW.js'
 
 const tests = ref([])
 
+const loadTests = async () => {
+  tests.value = await getAllTests()
+}
+
 onMounted(async () => {
   requestPushPermission()
-  tests.value = await getAllTests()
+  await loadTests()
+
+  window.addEventListener('online', loadTests)
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data.type === 'sync-complete') {
+        loadTests()
+      }
+    })
+  }
 })
 
 function formatDate(ts) {
