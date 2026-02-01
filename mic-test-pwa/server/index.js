@@ -16,9 +16,7 @@ app.post('/tests', (req, res) => {
 app.use(express.static(path.join(__dirname, '../dist')))
 
 app.get(/.*/, (req, res) => {
-  res.sendFile(
-    new URL('../dist/index.html', import.meta.url).pathname
-  )
+  res.sendFile(path.join(__dirname, '../dist/index.html'))
 })
 
 

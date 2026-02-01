@@ -8,6 +8,9 @@ export async function startMicrophone(onVolume) {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
   audioContext = new (window.AudioContext || window.webkitAudioContext)()
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume()
+  }
   analyser = audioContext.createAnalyser()
   source = audioContext.createMediaStreamSource(stream)
 
@@ -17,6 +20,7 @@ export async function startMicrophone(onVolume) {
   source.connect(analyser)
 
   function update() {
+    if (!analyser) return
     analyser.getByteFrequencyData(dataArray)
     const avg =
       dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length
