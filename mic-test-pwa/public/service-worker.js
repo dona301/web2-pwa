@@ -101,17 +101,29 @@ async function syncMicrophoneTests() {
     clients.forEach(client => client.postMessage({ type: 'sync-complete' }))
   })
 
-  self.registration.showNotification('Sync complete', {
-    body: 'Microphone tests uploaded successfully'
-  })
+  // Send push notification via server
+  fetch('/push', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title: 'Sync complete',
+      body: 'Microphone tests uploaded successfully'
+    })
+  }).catch(err => console.error('Error sending push:', err))
 }
 
 
+
 self.addEventListener('push', event => {
+  console.log('Push event received:', event)
   let data = {}
   try {
     data = event.data.json()
+    console.log('Push data:', data)
   } catch (err) {
+    console.error('Error parsing push data:', err)
     data = {
       title: 'Notification',
       body: event.data?.text() || 'You have a new update'
@@ -119,9 +131,12 @@ self.addEventListener('push', event => {
   }
 
   if (Notification.permission === 'granted') {
+    console.log('Showing notification:', data.title, data.body)
     self.registration.showNotification(data.title, {
       body: data.body
     });
+  } else {
+    console.warn('Notification permission not granted')
   }
 })
 
